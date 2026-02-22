@@ -29,57 +29,35 @@
 │   + W5500       │
 └────────┬────────┘
          │
-    ┌────┴────┐
-    │         │
-    ▼         ▼
-┌────────┐  ┌──────────────┐
-│  Web   │  │   Python     │
-│Browser │  │   Backend    │
-│(Direct)│  │  (Optional)  │
-└────────┘  └──────┬───────┘
-                   │
-                   ▼
-            ┌──────────────┐
-            │  Web Browser │
-            │   (Server)   │
-            └──────────────┘
+         │ UDP Broadcast
+         │ (192.168.0.255:8888)
+         ▼
+┌──────────────────┐
+│  Python Backend  │
+│  (UDP Listener)  │
+│  + HTTP Server   │
+└────────┬─────────┘
+         │
+         │ HTTP API
+         │ (localhost:8080)
+         ▼
+  ┌──────────────┐
+  │ Web Browser  │
+  │  (Frontend)  │
+  └──────────────┘
 ```
 
 ---
 
 ## 🚀 Быстрый старт
 
-### Вариант 1: Прямое подключение к Arduino (рекомендуется)
+### ⚠️ Важно: Arduino использует UDP
 
-1. **Настройте Arduino:**
-   ```bash
-   # Откройте arduino/quadcopter_stand.ino
-   # Измените IP адрес в config/config.json
-   # Загрузите на Arduino
-   ```
+Arduino отправляет данные через UDP broadcast, поэтому:
+- ❌ Прямое подключение браузера к Arduino невозможно
+- ✅ Необходим Python сервер для получения UDP и предоставления HTTP API
 
-2. **Настройте конфигурацию:**
-   ```json
-   // config/config.json
-   {
-     "connection": {
-       "mode": "direct",
-       "direct": {
-         "arduino_ip": "192.168.1.100"
-       }
-     }
-   }
-   ```
-
-3. **Запустите веб-интерфейс:**
-   ```bash
-   # Откройте frontend/index.html в браузере
-   # или используйте локальный сервер:
-   python -m http.server 8000
-   # Откройте: http://localhost:8000/frontend/
-   ```
-
-### Вариант 2: Через Python сервер
+### Единственный вариант: Через Python сервер
 
 1. **Установите зависимости:**
    ```bash
@@ -92,19 +70,37 @@
    {
      "connection": {
        "mode": "server"
+     },
+     "arduino": {
+       "network": {
+         "ip": "192.168.0.177"  // ← IP вашего Arduino
+       }
      }
    }
    ```
 
-3. **Запустите Python сервер:**
+3. **Загрузите код на Arduino:**
+   ```bash
+   # Откройте arduino/quadcopter_stand.ino в Arduino IDE
+   # Установите библиотеки: Ethernet, EthernetUdp, HX711, Wire
+   # Загрузите на Arduino
+   ```
+
+4. **Запустите Python сервер:**
    ```bash
    cd backend
    python monitor_with_web.py
+
+   # В GUI:
+   # 1. Запустите UDP слушатель (порт 8888)
+   # 2. Нажмите "Запуск Web"
    ```
 
-4. **Откройте веб-интерфейс:**
-   ```
-   http://localhost:8000/frontend/
+5. **Откройте веб-интерфейс:**
+   ```bash
+   # Запустите локальный сервер для frontend
+   python -m http.server 8000
+   # Откройте: http://localhost:8000/frontend/
    ```
 
 ---
@@ -115,7 +111,7 @@
 Stend_BPLA/
 ├── arduino/                    # Код для Arduino
 │   └── quadcopter_stand.ino   # Основной скетч
-├── backend/                    # Python сервер (опционально)
+├── backend/                    # Python сервер (обязательно!)
 │   ├── web_server.py          # HTTP API сервер
 │   └── monitor_with_web.py    # Интегрированная версия
 ├── config/                     # Конфигурация

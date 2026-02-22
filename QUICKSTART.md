@@ -5,103 +5,92 @@
 
 ---
 
-## 📋 Что нужно
+## ⚠️ Важно
 
-### Минимум (прямое подключение):
-- ✅ Arduino Nano с датчиками
-- ✅ Компьютер в той же сети
-- ✅ Браузер
-
-### Опционально (через сервер):
-- ✅ Python 3.7+
-- ✅ Библиотеки: `pip install pyserial matplotlib numpy netifaces`
+Arduino использует UDP broadcast для отправки данных, поэтому:
+- ❌ Прямое подключение браузера к Arduino невозможно
+- ✅ Python сервер обязателен (получает UDP → предоставляет HTTP API)
 
 ---
 
-## 🚀 Запуск за 3 шага
+## 📋 Что нужно
 
-### Вариант 1: Прямое подключение (рекомендуется)
+- ✅ Arduino Nano с датчиками
+- ✅ Python 3.7+
+- ✅ Библиотеки: `pip install pyserial matplotlib numpy netifaces`
+- ✅ Компьютер в той же сети с Arduino
 
-#### Шаг 1: Настройте Arduino
+---
+
+## 🚀 Запуск за 5 шагов
+
+### Шаг 1: Установите зависимости
 ```bash
-1. Откройте arduino/quadcopter_stand.ino в Arduino IDE
-2. Установите библиотеки:
-   - ArduinoJson
-   - HX711
-   - Adafruit_ADXL345
-3. Измените IP в config/config.json (если нужно)
-4. Загрузите на Arduino
+pip install pyserial matplotlib numpy netifaces
 ```
 
-#### Шаг 2: Настройте конфиг
+### Шаг 2: Настройте конфиг
 ```json
 // config/config.json
 {
   "connection": {
-    "mode": "direct",
-    "direct": {
-      "arduino_ip": "192.168.1.100"  // ← Ваш IP Arduino
+    "mode": "server"
+  },
+  "arduino": {
+    "network": {
+      "ip": "192.168.0.177",  // ← Ваш IP Arduino
+      "broadcast_ip": "192.168.0.255",
+      "udp_port": 8888
     }
   }
 }
 ```
 
-#### Шаг 3: Откройте веб-интерфейс
+### Шаг 3: Загрузите код на Arduino
 ```bash
-# Вариант А: Прямо из файла
-Откройте frontend/index.html в браузере
+1. Откройте arduino/quadcopter_stand.ino в Arduino IDE
+2. Установите библиотеки:
+   - Ethernet
+   - EthernetUdp
+   - HX711
+   - Wire
+   - Adafruit_ADXL345
+3. Загрузите на Arduino
+```
 
-# Вариант Б: Через локальный сервер (рекомендуется)
+### Шаг 4: Запустите Python сервер
+```bash
+cd backend
+python monitor_with_web.py
+
+# В GUI:
+# 1. Нажмите "Запуск UDP" (порт 8888)
+# 2. Нажмите "Запуск Web" (порт 8080)
+```
+
+### Шаг 5: Откройте веб-интерфейс
+```bash
+# В новом терминале:
 python -m http.server 8000
-# Откройте: http://localhost:8000/frontend/
+
+# Откройте в браузере:
+http://localhost:8000/frontend/
 ```
 
 ✅ **Готово!** Индикатор должен стать зеленым.
 
 ---
 
-### Вариант 2: Через Python сервер
-
-#### Шаг 1: Установите зависимости
-```bash
-pip install pyserial matplotlib numpy netifaces
-```
-
-#### Шаг 2: Настройте конфиг
-```json
-// config/config.json
-{
-  "connection": {
-    "mode": "server"
-  }
-}
-```
-
-#### Шаг 3: Запустите сервер
-```bash
-cd backend
-python monitor_with_web.py
-
-# В GUI:
-# 1. Подключите UART или запустите UDP
-# 2. Нажмите "Запуск Web"
-```
-
-#### Шаг 4: Откройте веб-интерфейс
-```
-http://localhost:8080/frontend/
-```
-
----
-
 ## 🔧 Настройка под ваш стенд
 
-### 1. IP адрес Arduino
+### 1. Сетевые параметры Arduino
 ```json
 // config/config.json
 "arduino": {
   "network": {
-    "ip": "192.168.1.XXX"  // ← Ваш IP
+    "ip": "192.168.0.177",        // ← Ваш IP
+    "broadcast_ip": "192.168.0.255",  // ← Ваш broadcast
+    "udp_port": 8888
   }
 }
 ```
@@ -111,9 +100,16 @@ http://localhost:8080/frontend/
 // config/config.json
 "pins": {
   "rpm_sensors": {
-    "motor_1": 2,  // ← Ваши пины
-    "motor_2": 3,
-    ...
+    "motor_1": 6,  // ← Ваши пины (моторы 1-2 с прерываниями)
+    "motor_2": 7,
+    "motor_3": 8,  // ← Моторы 3-4 с polling
+    "motor_4": 9
+  },
+  "load_cells": {
+    "hx711_1_dout": 2,
+    "hx711_1_sck": 3,
+    "hx711_2_dout": 4,
+    "hx711_2_sck": 5
   }
 }
 ```
@@ -123,8 +119,8 @@ http://localhost:8080/frontend/
 // config/config.json
 "calibration": {
   "load_cells": {
-    "scale_1": 420.0,  // ← Ваши коэффициенты
-    "scale_2": 420.0
+    "scale_1": 1000.0,  // ← Ваши коэффициенты
+    "scale_2": 1000.0
   }
 }
 ```
@@ -133,22 +129,27 @@ http://localhost:8080/frontend/
 
 ## ✅ Проверка работы
 
-### Тест 1: Arduino доступен
+### Тест 1: Arduino отправляет UDP
 ```bash
-# В браузере откройте:
-http://192.168.1.100/data
-
-# Должен вернуть JSON с данными
+# В Serial Monitor Arduino должны быть сообщения:
+{"status":"READY"}
+{"t":12345,"d":1,"m":[...],"r":[...],...}
 ```
 
-### Тест 2: Веб-интерфейс работает
+### Тест 2: Python получает UDP
+```bash
+# В GUI Python должны появляться пакеты:
+UDP: X пак, Y пак/с
 ```
-1. Откройте frontend/index.html
+
+### Тест 3: Веб-интерфейс работает
+```
+1. Откройте http://localhost:8000/frontend/
 2. Индикатор подключения: 🟢 (зеленый)
 3. Данные обновляются
 ```
 
-### Тест 3: Графики работают
+### Тест 4: Графики работают
 ```
 1. Кликните на любую карточку
 2. Откроется график
@@ -161,10 +162,19 @@ http://192.168.1.100/data
 
 ### "Нет связи" 🔴
 ```bash
-1. Проверьте IP в config/config.json
-2. Ping Arduino: ping 192.168.1.100
-3. Откройте консоль браузера (F12)
-4. Проверьте endpoint: http://ARDUINO_IP/data
+1. Проверьте что Python сервер запущен
+2. Проверьте что UDP слушатель активен (порт 8888)
+3. Проверьте что Web сервер активен (порт 8080)
+4. Проверьте Serial Monitor Arduino - должны быть JSON сообщения
+5. Проверьте что Arduino и компьютер в одной сети
+```
+
+### Python не получает UDP
+```bash
+1. Проверьте IP в config.json
+2. Проверьте что Arduino отправляет (Serial Monitor)
+3. Проверьте firewall (может блокировать UDP)
+4. Попробуйте подключить UART вместо UDP
 ```
 
 ### Неверные данные
@@ -172,13 +182,6 @@ http://192.168.1.100/data
 1. Проверьте калибровку в config/config.json
 2. Проверьте Serial Monitor Arduino
 3. Проверьте подключение датчиков
-```
-
-### CORS ошибки
-```bash
-# Используйте локальный сервер:
-python -m http.server 8000
-# Не открывайте через file://
 ```
 
 ---

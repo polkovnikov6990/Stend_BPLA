@@ -68,24 +68,25 @@ class WebAPIHandler(BaseHTTPRequestHandler):
                     int(last_data['rpms'][3]) if len(last_data['rpms']) > 3 else 0
                 ],
                 
-                # Температура двигателей
+                # Температура двигателей (приходит * 100, делим обратно)
                 "temp": [
-                    float(last_data['motors'][0]) if last_data['motors'][0] is not None else 0.0,
-                    float(last_data['motors'][1]) if last_data['motors'][1] is not None else 0.0,
-                    float(last_data['motors'][2]) if last_data['motors'][2] is not None else 0.0,
-                    float(last_data['motors'][3]) if last_data['motors'][3] is not None else 0.0
+                    float(last_data['motors'][0] / 100.0) if last_data['motors'][0] is not None else 0.0,
+                    float(last_data['motors'][1] / 100.0) if last_data['motors'][1] is not None else 0.0,
+                    float(last_data['motors'][2] / 100.0) if last_data['motors'][2] is not None else 0.0,
+                    float(last_data['motors'][3] / 100.0) if last_data['motors'][3] is not None else 0.0
                 ],
                 
                 # Тяга (сумма двух тензодатчиков в граммах)
+                # Данные приходят * 100, делим и переводим в граммы
                 "thrust": float(
-                    (last_data['loadCells'][0] + last_data['loadCells'][1]) * 1000
+                    (last_data['loadCells'][0] / 100.0 + last_data['loadCells'][1] / 100.0) * 1000
                 ) if len(last_data['loadCells']) >= 2 else 0.0,
                 
-                # Вибрация
+                # Вибрация (ADXL345: 256 LSB/g, преобразуем в м/с²)
                 "vibration": {
-                    "x": float(last_data['accel'][0]) if len(last_data['accel']) > 0 else 0.0,
-                    "y": float(last_data['accel'][1]) if len(last_data['accel']) > 1 else 0.0,
-                    "z": float(last_data['accel'][2]) if len(last_data['accel']) > 2 else 0.0
+                    "x": float(last_data['accel'][0] / 256.0 * 9.81) if len(last_data['accel']) > 0 else 0.0,
+                    "y": float(last_data['accel'][1] / 256.0 * 9.81) if len(last_data['accel']) > 1 else 0.0,
+                    "z": float(last_data['accel'][2] / 256.0 * 9.81) if len(last_data['accel']) > 2 else 0.0
                 },
                 
                 # Уровень шума (преобразуем 0-255 в дБ, примерно 40-100 дБ)

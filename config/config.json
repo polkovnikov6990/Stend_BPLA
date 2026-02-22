@@ -7,13 +7,13 @@
   },
   
   "connection": {
-    "mode": "direct",
-    "comment": "Режим подключения: 'direct' - напрямую к Arduino, 'server' - через Python сервер",
+    "mode": "server",
+    "comment": "Режим подключения: 'server' - через Python сервер (рекомендуется), 'direct' - не поддерживается (Arduino использует UDP)",
     
-    "direct": {
-      "arduino_ip": "192.168.1.100",
-      "arduino_port": 80,
-      "endpoint": "/data"
+    "arduino_udp": {
+      "comment": "Arduino отправляет данные через UDP broadcast",
+      "local_port": 8888,
+      "broadcast_ip": "192.168.0.255"
     },
     
     "server": {
@@ -25,20 +25,20 @@
   
   "arduino": {
     "network": {
-      "mac": "DE:AD:BE:EF:FE:ED",
-      "ip": "192.168.1.100",
-      "gateway": "192.168.1.1",
-      "subnet": "255.255.255.0",
-      "port": 80
+      "mac": "DE:AD:BE:EF:FE:01",
+      "ip": "192.168.0.177",
+      "broadcast_ip": "192.168.0.255",
+      "udp_port": 8888,
+      "device_id": 1
     },
     
     "pins": {
       "rpm_sensors": {
-        "motor_1": 2,
-        "motor_2": 3,
-        "motor_3": 4,
-        "motor_4": 5,
-        "description": "Цифровые пины для датчиков оборотов (TCRT5000)"
+        "motor_1": 6,
+        "motor_2": 7,
+        "motor_3": 8,
+        "motor_4": 9,
+        "description": "Цифровые пины для датчиков оборотов (TCRT5000). Моторы 1-2 используют прерывания, 3-4 - polling"
       },
       
       "temperature_sensors": {
@@ -50,14 +50,15 @@
       },
       
       "load_cells": {
-        "hx711_1_dout": 6,
-        "hx711_1_sck": 7,
-        "hx711_2_dout": 8,
-        "hx711_2_sck": 9,
+        "hx711_1_dout": 2,
+        "hx711_1_sck": 3,
+        "hx711_2_dout": 4,
+        "hx711_2_sck": 5,
         "description": "Пины для тензодатчиков HX711"
       },
       
       "accelerometer": {
+        "i2c_address": "0x53",
         "sda": "A4",
         "scl": "A5",
         "description": "I2C пины для акселерометра ADXL345"
@@ -76,24 +77,31 @@
     
     "calibration": {
       "temperature": {
-        "r_series": 10000,
-        "r_nominal": 100000,
-        "t_nominal": 25,
-        "b_coefficient": 3950,
-        "description": "Параметры для термисторов NTC"
+        "steinhart_a": 0.001129148,
+        "steinhart_b": 0.000234125,
+        "steinhart_c": 0.0000000876741,
+        "r_series": 100000,
+        "description": "Коэффициенты уравнения Стейнхарта-Харта для NTC"
       },
       
       "load_cells": {
-        "scale_1": 420.0,
-        "scale_2": 420.0,
-        "offset_1": 0,
-        "offset_2": 0,
-        "description": "Калибровочные коэффициенты для тензодатчиков"
+        "scale_1": 1000.0,
+        "scale_2": 1000.0,
+        "description": "Калибровочные коэффициенты для тензодатчиков HX711"
       },
       
       "rpm": {
-        "pulses_per_revolution": 1,
-        "description": "Количество импульсов на оборот"
+        "motors_1_2_mode": "interrupt",
+        "motors_3_4_mode": "polling",
+        "description": "Моторы 1-2 используют прерывания, 3-4 - опрос состояния"
+      },
+      
+      "data_format": {
+        "temp_scale": 100,
+        "load_scale": 100,
+        "accel_raw": true,
+        "sound_shift": 2,
+        "description": "Температура и нагрузка умножены на 100, звук сдвинут на 2 бита"
       }
     }
   },
@@ -112,16 +120,25 @@
   "backend": {
     "uart": {
       "baudrate": 115200,
-      "timeout": 1
+      "timeout": 1,
+      "enabled": true
     },
     
     "udp": {
-      "port": 8888
+      "port": 8888,
+      "enabled": true
     },
     
     "http": {
       "host": "0.0.0.0",
-      "port": 8080
+      "port": 8080,
+      "enabled": true
+    },
+    
+    "intervals": {
+      "uart_ms": 200,
+      "udp_ms": 200,
+      "sensor_read_ms": 50
     }
   }
 }
