@@ -7,19 +7,21 @@
   },
   
   "connection": {
-    "mode": "server",
-    "comment": "Режим подключения: 'server' - через Python сервер (рекомендуется), 'direct' - не поддерживается (Arduino использует UDP)",
+    "mode": "direct",
+    "comment": "Режим подключения: 'direct' - напрямую к Arduino (HTTP), 'server' - через Python сервер (UDP→HTTP)",
     
-    "arduino_udp": {
-      "comment": "Arduino отправляет данные через UDP broadcast",
-      "local_port": 8888,
-      "broadcast_ip": "192.168.0.255"
+    "direct": {
+      "arduino_ip": "192.168.0.177",
+      "arduino_port": 80,
+      "endpoint": "/data",
+      "comment": "Arduino предоставляет HTTP API на порту 80"
     },
     
     "server": {
       "server_ip": "localhost",
       "server_port": 8080,
-      "endpoint": "/data"
+      "endpoint": "/data",
+      "comment": "Python сервер получает UDP от Arduino и предоставляет HTTP API"
     }
   },
   

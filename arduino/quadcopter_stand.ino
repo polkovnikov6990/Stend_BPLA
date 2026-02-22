@@ -26,6 +26,7 @@
  * ==============================================================================
  */
 EthernetUDP Udp;
+EthernetServer server(80);  // HTTP сервер на порту 80
 
 /*
  * ==============================================================================
@@ -392,6 +393,129 @@ void sendUDPBroadcast() {
 
 /*
  * ==============================================================================
+ * HTTP СЕРВЕР ДЛЯ ПРЯМОГО ПОДКЛЮЧЕНИЯ БРАУЗЕРА
+ * ==============================================================================
+ */
+void handleHTTPRequests() {
+  EthernetClient client = server.available();
+  
+  if (client) {
+    String request = "";
+    boolean currentLineIsBlank = true;
+    
+    while (client.connected()) {
+      if (client.available()) {
+        char c = client.read();
+        request += c;
+        
+        if (c == '\n' && currentLineIsBlank) {
+          // Обработка запроса /data
+          if (request.indexOf("GET /data") >= 0) {
+            sendHTTPData(client);
+          } 
+          // Главная страница
+          else if (request.indexOf("GET /") >= 0) {
+            sendHomePage(client);
+          } 
+          else {
+            client.println("HTTP/1.1 404 Not Found");
+            client.println("Connection: close");
+            client.println();
+          }
+          break;
+        }
+        
+        if (c == '\n') {
+          currentLineIsBlank = true;
+        } else if (c != '\r') {
+          currentLineIsBlank = false;
+        }
+      }
+    }
+    
+    delay(1);
+    client.stop();
+  }
+}
+
+/*
+ * ==============================================================================
+ * ОТПРАВКА JSON ЧЕРЕЗ HTTP
+ * ==============================================================================
+ */
+void sendHTTPData(EthernetClient &client) {
+  buildJSON();
+  
+  // HTTP заголовки
+  client.println("HTTP/1.1 200 OK");
+  client.println("Content-Type: application/json");
+  client.println("Access-Control-Allow-Origin: *");  // ВАЖНО для CORS!
+  client.println("Connection: close");
+  client.println();
+  
+  // Преобразуем формат для веб-интерфейса
+  // Веб ожидает: {"rpm":[...], "temp":[...], "thrust":..., "vibration":{...}, "noise":...}
+  
+  client.print("{\"rpm\":[");
+  for (int i = 0; i < 4; i++) {
+    if (i > 0) client.print(",");
+    client.print(sensorData.rpm[i]);
+  }
+  
+  client.print("],\"temp\":[");
+  for (int i = 0; i < 4; i++) {
+    if (i > 0) client.print(",");
+    if (sensorData.motorTemp[i] < -9000) {
+      client.print("0.0");
+    } else {
+      // Делим на 100 для получения градусов
+      client.print(sensorData.motorTemp[i] / 100.0, 1);
+    }
+  }
+  
+  // Тяга: сумма двух тензодатчиков в граммах
+  float thrust = (sensorData.loadCell1 / 100.0 + sensorData.loadCell2 / 100.0) * 1000;
+  client.print("],\"thrust\":");
+  client.print(thrust, 1);
+  
+  // Вибрация: преобразуем в м/с² (256 LSB/g * 9.81)
+  client.print(",\"vibration\":{\"x\":");
+  client.print(sensorData.accel[0] / 256.0 * 9.81, 2);
+  client.print(",\"y\":");
+  client.print(sensorData.accel[1] / 256.0 * 9.81, 2);
+  client.print(",\"z\":");
+  client.print(sensorData.accel[2] / 256.0 * 9.81, 2);
+  
+  // Шум: преобразуем в дБ (0-255 -> 40-100 дБ)
+  float noiseDB = 40.0 + (sensorData.soundLevel / 255.0) * 60.0;
+  client.print("},\"noise\":");
+  client.print(noiseDB, 1);
+  client.println("}");
+}
+
+/*
+ * ==============================================================================
+ * ДОМАШНЯЯ СТРАНИЦА
+ * ==============================================================================
+ */
+void sendHomePage(EthernetClient &client) {
+  client.println("HTTP/1.1 200 OK");
+  client.println("Content-Type: text/html; charset=utf-8");
+  client.println("Connection: close");
+  client.println();
+  
+  client.println("<!DOCTYPE html>");
+  client.println("<html><head><meta charset='utf-8'>");
+  client.println("<title>Стенд БПЛА</title></head><body>");
+  client.println("<h1>🚁 Стенд тестирования квадрокоптера</h1>");
+  client.println("<p>Система работает</p>");
+  client.println("<p><a href='/data'>Получить данные (JSON)</a></p>");
+  client.println("<p>Авторы: Полковников А.В., Глазырин К.С.</p>");
+  client.println("</body></html>");
+}
+
+/*
+ * ==============================================================================
  * ИНИЦИАЛИЗАЦИЯ ETHERNET
  * ==============================================================================
  */
@@ -515,6 +639,12 @@ void setup() {
   
   initEthernet();
   
+  // Запуск HTTP сервера
+  if (ethernet_available) {
+    server.begin();
+    Serial.println("{\"info\":\"HTTP server started on port 80\"}");
+  }
+  
   // ============================================================================
   // НАСТРОЙКА ПРЕРЫВАНИЙ (моторы 1-2)
   // ============================================================================
@@ -559,6 +689,9 @@ void loop() {
     sendUDPBroadcast();
     lastUdpTime = now;
   }
+  
+  // Обработка HTTP запросов
+  handleHTTPRequests();
   
   delay(10);
 }
