@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Стенд тестирования квадрокоптера</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="department-header">
+            <p>Кафедра робототехники и противодействия робототехническим комплексам (системам)</p>
+            <button class="authors-btn" onclick="openAuthors()">Авторы</button>
+        </div>
+        
+        <header>
+            <h1>🚁 Стенд тестирования квадрокоптера</h1>
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-indicator"></span>
+                <span id="statusText">Подключение...</span>
+            </div>
+        </header>
+
+        <main>
+            <!-- Обороты двигателей -->
+            <section class="card clickable" onclick="openChart('rpm')">
+                <h2>⚙️ Обороты двигателей (RPM)</h2>
+                <div class="motors-grid">
+                    <div class="motor-item">
+                        <span class="motor-label">Двигатель 1</span>
+                        <span class="motor-value" id="rpm1">0</span>
+                    </div>
+                    <div class="motor-item">
+                        <span class="motor-label">Двигатель 2</span>
+                        <span class="motor-value" id="rpm2">0</span>
+                    </div>
+                    <div class="motor-item">
+                        <span class="motor-label">Двигатель 3</span>
+                        <span class="motor-value" id="rpm3">0</span>
+                    </div>
+                    <div class="motor-item">
+                        <span class="motor-label">Двигатель 4</span>
+                        <span class="motor-value" id="rpm4">0</span>
+                    </div>
+                </div>
+                <div class="chart-hint">📈 Нажми для графика</div>
+            </section>
+
+            <!-- Температура двигателей -->
+            <section class="card clickable" onclick="openChart('temp')">
+                <h2>🌡️ Температура двигателей (°C)</h2>
+                <div class="motors-grid">
+                    <div class="motor-item">
+                        <span class="motor-label">Двигатель 1</span>
+                        <span class="motor-value" id="temp1">0</span>
+                    </div>
+                    <div class="motor-item">
+                        <span class="motor-label">Двигатель 2</span>
+                        <span class="motor-value" id="temp2">0</span>
+                    </div>
+                    <div class="motor-item">
+                        <span class="motor-label">Двигатель 3</span>
+                        <span class="motor-value" id="temp3">0</span>
+                    </div>
+                    <div class="motor-item">
+                        <span class="motor-label">Двигатель 4</span>
+                        <span class="motor-value" id="temp4">0</span>
+                    </div>
+                </div>
+                <div class="chart-hint">📈 Нажми для графика</div>
+            </section>
+
+            <!-- Тензодатчики -->
+            <section class="card clickable" onclick="openChart('thrust')">
+                <h2>⚖️ Тяга (г)</h2>
+                <div class="sensor-grid">
+                    <div class="sensor-item">
+                        <span class="sensor-label">Общая тяга</span>
+                        <span class="sensor-value large" id="thrust">0</span>
+                    </div>
+                </div>
+                <div class="chart-hint">📈 Нажми для графика</div>
+            </section>
+
+            <!-- Вибрация -->
+            <section class="card clickable" onclick="openChart('vibration')">
+                <h2>📊 Вибрация (м/с²)</h2>
+                <div class="sensor-grid">
+                    <div class="sensor-item">
+                        <span class="sensor-label">X</span>
+                        <span class="sensor-value" id="vibX">0.00</span>
+                    </div>
+                    <div class="sensor-item">
+                        <span class="sensor-label">Y</span>
+                        <span class="sensor-value" id="vibY">0.00</span>
+                    </div>
+                    <div class="sensor-item">
+                        <span class="sensor-label">Z</span>
+                        <span class="sensor-value" id="vibZ">0.00</span>
+                    </div>
+                </div>
+                <div class="chart-hint">📈 Нажми для графика</div>
+            </section>
+
+            <!-- Уровень шума -->
+            <section class="card clickable" onclick="openChart('noise')">
+                <h2>🔊 Уровень шума (дБ)</h2>
+                <div class="sensor-grid">
+                    <div class="sensor-item">
+                        <span class="sensor-label">Текущий уровень</span>
+                        <span class="sensor-value large" id="noise">0</span>
+                    </div>
+                </div>
+                <div class="noise-bar">
+                    <div class="noise-fill" id="noiseFill"></div>
+                </div>
+                <div class="chart-hint">📈 Нажми для графика</div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Последнее обновление: <span id="lastUpdate">--:--:--</span></p>
+        </footer>
+    </div>
+
+    <!-- Модальное окно с графиком -->
+    <div id="chartModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="chartTitle">График</h2>
+                <button class="close-btn" onclick="closeChart()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <canvas id="chartCanvas"></canvas>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="clearChartData()">🗑️ Очистить</button>
+                <button class="btn" onclick="exportChartData()">💾 Экспорт</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно с авторами -->
+    <div id="authorsModal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>👥 Авторы проекта</h2>
+                <button class="close-btn" onclick="closeAuthors()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="authors-list">
+                    <div class="author-item">
+                        <span class="author-name">Полковников А.В.</span>
+                    </div>
+                    <div class="author-item">
+                        <span class="author-name">Глазырин К.В.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

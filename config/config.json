@@ -1,0 +1,127 @@
+{
+  "project": {
+    "name": "Стенд тестирования БПЛА",
+    "version": "1.0.0",
+    "authors": ["Полковников А.В.", "Глазырин К.С."],
+    "organization": "Кафедра робототехники и противодействия робототехническим комплексам (системам)"
+  },
+  
+  "connection": {
+    "mode": "direct",
+    "comment": "Режим подключения: 'direct' - напрямую к Arduino, 'server' - через Python сервер",
+    
+    "direct": {
+      "arduino_ip": "192.168.1.100",
+      "arduino_port": 80,
+      "endpoint": "/data"
+    },
+    
+    "server": {
+      "server_ip": "localhost",
+      "server_port": 8080,
+      "endpoint": "/data"
+    }
+  },
+  
+  "arduino": {
+    "network": {
+      "mac": "DE:AD:BE:EF:FE:ED",
+      "ip": "192.168.1.100",
+      "gateway": "192.168.1.1",
+      "subnet": "255.255.255.0",
+      "port": 80
+    },
+    
+    "pins": {
+      "rpm_sensors": {
+        "motor_1": 2,
+        "motor_2": 3,
+        "motor_3": 4,
+        "motor_4": 5,
+        "description": "Цифровые пины для датчиков оборотов (TCRT5000)"
+      },
+      
+      "temperature_sensors": {
+        "motor_1": "A0",
+        "motor_2": "A1",
+        "motor_3": "A2",
+        "motor_4": "A3",
+        "description": "Аналоговые пины для термисторов NTC 100k"
+      },
+      
+      "load_cells": {
+        "hx711_1_dout": 6,
+        "hx711_1_sck": 7,
+        "hx711_2_dout": 8,
+        "hx711_2_sck": 9,
+        "description": "Пины для тензодатчиков HX711"
+      },
+      
+      "accelerometer": {
+        "sda": "A4",
+        "scl": "A5",
+        "description": "I2C пины для акселерометра ADXL345"
+      },
+      
+      "microphone": {
+        "analog_pin": "A6",
+        "description": "Аналоговый пин для микрофона MAX9814"
+      },
+      
+      "ethernet": {
+        "cs_pin": 10,
+        "description": "Chip Select пин для W5500"
+      }
+    },
+    
+    "calibration": {
+      "temperature": {
+        "r_series": 10000,
+        "r_nominal": 100000,
+        "t_nominal": 25,
+        "b_coefficient": 3950,
+        "description": "Параметры для термисторов NTC"
+      },
+      
+      "load_cells": {
+        "scale_1": 420.0,
+        "scale_2": 420.0,
+        "offset_1": 0,
+        "offset_2": 0,
+        "description": "Калибровочные коэффициенты для тензодатчиков"
+      },
+      
+      "rpm": {
+        "pulses_per_revolution": 1,
+        "description": "Количество импульсов на оборот"
+      }
+    }
+  },
+  
+  "frontend": {
+    "update_interval_ms": 100,
+    "max_chart_points": 100,
+    "theme": {
+      "primary_color": "#92000a",
+      "secondary_color": "#6b0f1a",
+      "background_gradient_start": "#92000a",
+      "background_gradient_end": "#5c0011"
+    }
+  },
+  
+  "backend": {
+    "uart": {
+      "baudrate": 115200,
+      "timeout": 1
+    },
+    
+    "udp": {
+      "port": 8888
+    },
+    
+    "http": {
+      "host": "0.0.0.0",
+      "port": 8080
+    }
+  }
+}

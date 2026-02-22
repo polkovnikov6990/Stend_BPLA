@@ -1,0 +1,81 @@
+{
+  "description": "Файл маппинга данных между Arduino и веб-интерфейсом",
+  "version": "1.0",
+  "arduino_endpoint": "/data",
+  "update_interval_ms": 100,
+  
+  "data_structure": {
+    "rpm": {
+      "type": "array",
+      "length": 4,
+      "description": "Обороты двигателей в RPM",
+      "arduino_variables": [
+        "motor1_rpm",
+        "motor2_rpm",
+        "motor3_rpm",
+        "motor4_rpm"
+      ],
+      "example": [1200, 1250, 1180, 1220]
+    },
+    
+    "temp": {
+      "type": "array",
+      "length": 4,
+      "description": "Температура двигателей в °C",
+      "arduino_variables": [
+        "motor1_temp",
+        "motor2_temp",
+        "motor3_temp",
+        "motor4_temp"
+      ],
+      "example": [45.5, 47.2, 44.8, 46.1]
+    },
+    
+    "thrust": {
+      "type": "number",
+      "description": "Общая тяга с тензодатчиков в граммах",
+      "arduino_variables": [
+        "total_thrust"
+      ],
+      "example": 850.5
+    },
+    
+    "vibration": {
+      "type": "object",
+      "description": "Вибрация по осям в м/с²",
+      "arduino_variables": {
+        "x": "accel_x",
+        "y": "accel_y",
+        "z": "accel_z"
+      },
+      "example": {
+        "x": 0.15,
+        "y": 0.12,
+        "z": 9.85
+      }
+    },
+    
+    "noise": {
+      "type": "number",
+      "description": "Уровень шума в дБ",
+      "arduino_variables": [
+        "noise_level"
+      ],
+      "example": 75.3
+    }
+  },
+  
+  "notes": {
+    "для_программиста_arduino": [
+      "1. Замените названия переменных в arduino_variables на свои",
+      "2. Используйте пример кода из файла arduino-template.ino",
+      "3. Убедитесь что JSON формируется корректно",
+      "4. Не забудьте добавить заголовок Access-Control-Allow-Origin: *"
+    ],
+    "для_программиста_frontend": [
+      "1. Структура данных уже настроена в app.js",
+      "2. Измените ARDUINO_IP в app.js на реальный IP",
+      "3. При необходимости измените UPDATE_INTERVAL"
+    ]
+  }
+}
