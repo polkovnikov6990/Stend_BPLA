@@ -21,7 +21,7 @@
 ### 2. Настройка Frontend
 В файле `app.js` измените IP-адрес Arduino:
 ```javascript
-const ARDUINO_IP = '192.168.1.100'; // Твой IP Arduino
+const ARDUINO_IP = '192.168.0.177'; // Твой IP Arduino
 ```
 
 ### 3. Формат данных от Arduino

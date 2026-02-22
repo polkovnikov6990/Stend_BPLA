@@ -62,7 +62,7 @@ def main():
 ```javascript
 const ARDUINO_IP = 'localhost:8080'; // Если на том же компьютере
 // или
-const ARDUINO_IP = '192.168.1.XXX:8080'; // IP компьютера с Python
+const ARDUINO_IP = '192.168.0.XXX:8080'; // IP компьютера с Python
 ```
 
 ### Шаг 4: Запуск
@@ -86,7 +86,7 @@ const ARDUINO_IP = '192.168.1.XXX:8080'; // IP компьютера с Python
 
 В `app.js`:
 ```javascript
-const ARDUINO_IP = '192.168.1.100'; // IP вашего Arduino
+const ARDUINO_IP = '192.168.0.177'; // IP вашего Arduino
 ```
 
 ### Шаг 3: Откройте веб-интерфейс

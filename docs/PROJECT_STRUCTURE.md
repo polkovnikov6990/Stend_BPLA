@@ -157,7 +157,7 @@ python monitor_with_web.py
   "connection": {
     "mode": "direct",  // или "server"
     "direct": {
-      "arduino_ip": "192.168.1.100",
+      "arduino_ip": "192.168.0.177",
       "arduino_port": 80
     },
     "server": {
@@ -179,10 +179,10 @@ python monitor_with_web.py
 {
   "arduino": {
     "network": {
-      "mac": "DE:AD:BE:EF:FE:ED",
-      "ip": "192.168.1.100",
-      "gateway": "192.168.1.1",
-      "subnet": "255.255.255.0"
+      "mac": "DE:AD:BE:EF:FE:01",
+      "ip": "192.168.0.177",
+      "broadcast_ip": "192.168.0.255",
+      "udp_port": 8888
     }
   }
 }
