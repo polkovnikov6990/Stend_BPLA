@@ -10,14 +10,16 @@ async function loadConfig() {
     try {
         const response = await fetch('../config/config.json');
         CONFIG = await response.json();
+        console.log('✅ Конфигурация загружена:', CONFIG);
         return true;
     } catch (error) {
-        console.warn('Не удалось загрузить config.json, используем значения по умолчанию');
+        console.warn('⚠️ Не удалось загрузить config.json, используем значения по умолчанию');
+        console.error('Ошибка:', error);
         // Значения по умолчанию
         CONFIG = {
             connection: {
                 mode: 'direct',
-                direct: { arduino_ip: '192.168.1.100', arduino_port: 80, endpoint: '/data' },
+                direct: { arduino_ip: '192.168.0.177', arduino_port: 80, endpoint: '/data' },
                 server: { server_ip: 'localhost', server_port: 8080, endpoint: '/data' }
             },
             frontend: {
@@ -25,20 +27,29 @@ async function loadConfig() {
                 max_chart_points: 100
             }
         };
+        console.log('📝 Используется конфигурация по умолчанию:', CONFIG);
         return false;
     }
 }
 
 // Получение URL для подключения
 function getConnectionURL() {
-    if (!CONFIG) return 'http://192.168.1.100/data';
+    if (!CONFIG) {
+        console.error('❌ CONFIG не загружен!');
+        return 'http://192.168.0.177/data';
+    }
     
     const conn = CONFIG.connection;
+    let url;
+    
     if (conn.mode === 'direct') {
-        return `http://${conn.direct.arduino_ip}:${conn.direct.arduino_port}${conn.direct.endpoint}`;
+        url = `http://${conn.direct.arduino_ip}:${conn.direct.arduino_port}${conn.direct.endpoint}`;
     } else {
-        return `http://${conn.server.server_ip}:${conn.server.server_port}${conn.server.endpoint}`;
+        url = `http://${conn.server.server_ip}:${conn.server.server_port}${conn.server.endpoint}`;
     }
+    
+    console.log(`🔗 URL подключения (${conn.mode}):`, url);
+    return url;
 }
 
 // Константы (будут переопределены после загрузки конфига)
@@ -98,23 +109,35 @@ let updateTimer = null;
 async function fetchData() {
     try {
         const url = getConnectionURL();
+        console.log('📡 Запрос данных:', url);
+        
         const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            cache: 'no-cache'
         });
         
+        console.log('📥 Ответ получен:', response.status, response.statusText);
+        
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
         const data = await response.json();
+        console.log('✅ Данные распарсены:', data);
+        
         updateUI(data);
         setConnectionStatus(true);
         
     } catch (error) {
-        console.error('Ошибка получения данных:', error);
+        console.error('❌ Ошибка получения данных:', error);
+        console.error('Детали:', {
+            message: error.message,
+            name: error.name,
+            stack: error.stack
+        });
         setConnectionStatus(false);
     }
 }

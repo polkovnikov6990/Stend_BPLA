@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест подключения к Arduino</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #00ff00;
+        }
+        .test-section {
+            background: #2d2d2d;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #00ff00;
+        }
+        button {
+            background: #00ff00;
+            color: #1e1e1e;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #00cc00;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #1a1a1a;
+            border-left: 3px solid #00ff00;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .error {
+            border-left-color: #ff0000;
+            color: #ff0000;
+        }
+        .success {
+            border-left-color: #00ff00;
+            color: #00ff00;
+        }
+        input {
+            background: #2d2d2d;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 8px;
+            font-size: 14px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Тест подключения к Arduino</h1>
+    
+    <div class="test-section">
+        <h2>1. Настройки</h2>
+        <label>IP Arduino: <input type="text" id="arduinoIP" value="192.168.0.177"></label><br><br>
+        <label>Порт: <input type="text" id="arduinoPort" value="80"></label>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Тест Ping (HTTP HEAD)</h2>
+        <button onclick="testPing()">Проверить доступность</button>
+        <div id="pingResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Тест /data endpoint</h2>
+        <button onclick="testData()">Получить данные</button>
+        <div id="dataResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Тест главной страницы</h2>
+        <button onclick="testHome()">Открыть /</button>
+        <div id="homeResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Проверка CORS</h2>
+        <button onclick="testCORS()">Проверить CORS заголовки</button>
+        <div id="corsResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>6. Информация о сети</h2>
+        <button onclick="showNetworkInfo()">Показать</button>
+        <div id="networkResult" class="result"></div>
+    </div>
+
+    <script>
+        function getURL() {
+            const ip = document.getElementById('arduinoIP').value;
+            const port = document.getElementById('arduinoPort').value;
+            return `http://${ip}:${port}`;
+        }
+
+        async function testPing() {
+            const result = document.getElementById('pingResult');
+            result.textContent = 'Проверка...';
+            result.className = 'result';
+            
+            try {
+                const url = getURL();
+                const response = await fetch(url, { 
+                    method: 'HEAD',
+                    mode: 'no-cors'
+                });
+                
+                result.textContent = `✅ Arduino доступен!\nURL: ${url}\nСтатус: ${response.status || 'OK (no-cors)'}`;
+                result.className = 'result success';
+            } catch (error) {
+                result.textContent = `❌ Ошибка подключения:\n${error.message}\n\nВозможные причины:\n1. Arduino не в сети\n2. Неверный IP адрес\n3. Firewall блокирует\n4. Arduino не запущен`;
+                result.className = 'result error';
+            }
+        }
+
+        async function testData() {
+            const result = document.getElementById('dataResult');
+            result.textContent = 'Получение данных...';
+            result.className = 'result';
+            
+            try {
+                const url = getURL() + '/data';
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                result.textContent = `✅ Данные получены!\n\n${JSON.stringify(data, null, 2)}`;
+                result.className = 'result success';
+            } catch (error) {
+                result.textContent = `❌ Ошибка:\n${error.message}\n\nПроверьте:\n1. Arduino отвечает на ${getURL()}/data\n2. Формат ответа - JSON\n3. CORS заголовки установлены`;
+                result.className = 'result error';
+            }
+        }
+
+        async function testHome() {
+            const result = document.getElementById('homeResult');
+            result.textContent = 'Загрузка...';
+            result.className = 'result';
+            
+            try {
+                const url = getURL() + '/';
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const html = await response.text();
+                result.textContent = `✅ Главная страница загружена!\n\nПервые 500 символов:\n${html.substring(0, 500)}...`;
+                result.className = 'result success';
+            } catch (error) {
+                result.textContent = `❌ Ошибка:\n${error.message}`;
+                result.className = 'result error';
+            }
+        }
+
+        async function testCORS() {
+            const result = document.getElementById('corsResult');
+            result.textContent = 'Проверка CORS...';
+            result.className = 'result';
+            
+            try {
+                const url = getURL() + '/data';
+                const response = await fetch(url);
+                
+                const corsHeader = response.headers.get('Access-Control-Allow-Origin');
+                
+                if (corsHeader) {
+                    result.textContent = `✅ CORS настроен!\nAccess-Control-Allow-Origin: ${corsHeader}`;
+                    result.className = 'result success';
+                } else {
+                    result.textContent = `⚠️ CORS заголовок не найден!\n\nЭто может вызвать проблемы при подключении из браузера.\nДобавьте в Arduino код:\nclient.println("Access-Control-Allow-Origin: *");`;
+                    result.className = 'result error';
+                }
+            } catch (error) {
+                result.textContent = `❌ Не удалось проверить:\n${error.message}`;
+                result.className = 'result error';
+            }
+        }
+
+        function showNetworkInfo() {
+            const result = document.getElementById('networkResult');
+            
+            const info = `
+Текущая страница: ${window.location.href}
+Протокол: ${window.location.protocol}
+Хост: ${window.location.host}
+
+Arduino URL: ${getURL()}
+
+Браузер: ${navigator.userAgent}
+
+Примечание:
+- Если открыто через file://, могут быть проблемы с CORS
+- Используйте локальный сервер: python -m http.server 8000
+- Arduino и компьютер должны быть в одной сети
+            `;
+            
+            result.textContent = info;
+            result.className = 'result';
+        }
+
+        // Автоматическая проверка при загрузке
+        window.addEventListener('load', () => {
+            console.log('Тестовая страница загружена');
+            console.log('Arduino URL:', getURL());
+        });
+    </script>
+</body>
+</html>
